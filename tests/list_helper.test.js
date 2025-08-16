@@ -88,16 +88,16 @@ describe("total likes", () => {
 describe("favorite blog", () => {
   test("of empty list is zero", () => {
     const result = listHelper.favoriteBlog([])
-    assert.strictEqual(result, null)
+    assert.deepStrictEqual(result, null)
   })
 
   test("when list has only one blog, equals that blog", () => {
     const result = listHelper.favoriteBlog(listWithOneBlog)
-    assert.strictEqual(result, listWithOneBlog[0])
+    assert.deepStrictEqual(result, listWithOneBlog[0])
   })
 
   test("of a bigger list is the third one", () => {
     const result = listHelper.favoriteBlog(blogs)
-    assert.strictEqual(result, blogs[2])
+    assert.deepStrictEqual(result, blogs[2])
   })
 })
