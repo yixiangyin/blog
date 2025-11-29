@@ -117,6 +117,38 @@ test("if likes property is missing, it defaults to 0", async () => {
   assert.strictEqual(response.body.likes, 0)
 })
 
+// 4.12*: Blog List tests, step 5
+
+// Write tests related to creating new blogs via the /api/blogs endpoint, that verify that if the title or url properties are missing from the request data, the backend responds to the request with the status code 400 Bad Request.
+
+// Make the required changes to the code so that it passes the test.
+test("blog without title is not added", async () => {
+  const newBlog = {
+    author: "No Title Author",
+    url: "https://example.com",
+    likes: 5
+  }
+
+  await api
+    .post("/api/blogs")
+    .send(newBlog)
+    .expect(400)
+})
+
+test("blog without url is not added", async () => {
+  const newBlog = {
+    title: "No URL Blog",
+    author: "Someone",
+    likes: 5
+  }
+
+  await api
+    .post("/api/blogs")
+    .send(newBlog)
+    .expect(400)
+})
+
+
 after(async () => {
   await mongoose.connection.close()
 })
