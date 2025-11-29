@@ -39,8 +39,21 @@ test("blogs are returned as json", async () => {
 
 test("all blogs are returned", async () => {
   const response = await api.get("/api/blogs")
-  console.log(response.body.length)
+  // console.log(response.body.length)
   assert.strictEqual(response.body.length, initialBlogs.length)
+})
+
+test("blog posts have id property, not _id", async () => {
+  const response = await api.get("/api/blogs")
+
+  const blogs = response.body
+
+  blogs.forEach((blog) => {
+    // id should exist
+    assert.ok(blog.id, "blog.id should be defined")
+    // _id should NOT be in the JSON
+    assert.strictEqual(blog._id, undefined)
+  })
 })
 
 after(async () => {
