@@ -22,8 +22,6 @@ const initialBlogs = [
   },
 ]
 
-
-
 beforeEach(async () => {
   await Blog.deleteMany({})
   let blogObject = new Blog(initialBlogs[0])
@@ -68,11 +66,11 @@ test("blog posts have id property, not _id", async () => {
 
 test("a valid blog can be added", async () => {
   const newBlog = {
-  title: "Love yourself",
-  author: "Justin Bieber",
-  url: "https://en.wikipedia.org/wiki/Love_Yourself",
-  likes: 999,
-}
+    title: "Love yourself",
+    author: "Justin Bieber",
+    url: "https://en.wikipedia.org/wiki/Love_Yourself",
+    likes: 999,
+  }
 
   // send POST request
   await api
@@ -91,6 +89,34 @@ test("a valid blog can be added", async () => {
     "Newly added blog title should be found in DB"
   )
 })
+
+// 4.11*: Blog List Tests, step 4
+
+// Write a test that verifies that if the likes property is missing from the request, it will default to the value 0. Do not test the other properties of the created blogs yet.
+
+// Make the required changes to the code so that it passes the test.
+
+test("if likes property is missing, it defaults to 0", async () => {
+  const newBlog = {
+    title: "Love yourself",
+    author: "Justin Bieber",
+    url: "https://en.wikipedia.org/wiki/Love_Yourself",
+    // likes intentionally omitted
+  }
+
+  const response = await api
+    .post("/api/blogs")
+    .send(newBlog)
+    .expect(201)
+    .expect("Content-Type", /application\/json/)
+
+  // const blogsAtEnd = await Blog.find({})
+  // console.log(blogsAtEnd)
+  // console.log(response.body)
+  // Check only the likes field
+  assert.strictEqual(response.body.likes, 0)
+})
+
 after(async () => {
   await mongoose.connection.close()
 })
