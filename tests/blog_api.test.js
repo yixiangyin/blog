@@ -1,32 +1,19 @@
 const assert = require("node:assert")
-const { test, after, beforeEach, before } = require("node:test")
+const { test, after, beforeEach, before, describe } = require("node:test")
 const mongoose = require("mongoose")
 const supertest = require("supertest")
 const app = require("../app")
 const Blog = require("../models/blog")
-
+const helper = require("./test_helper")
 const api = supertest(app)
 
-const initialBlogs = [
-  {
-    title: "Payphone",
-    author: "Maroon 5",
-    url: "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://en.wikipedia.org/wiki/Payphone_(song)&ved=2ahUKEwiq17qr3dmQAxUASmwGHd3yOvwQFnoECCAQAQ&usg=AOvVaw0eIqsrRXFwEPtyKVZtbk8o",
-    likes: 10,
-  },
-  {
-    title: "Happy",
-    author: "Peter",
-    url: "",
-    likes: 0,
-  },
-]
+
 
 beforeEach(async () => {
   await Blog.deleteMany({})
-  let blogObject = new Blog(initialBlogs[0])
+  let blogObject = new Blog(helper.initialBlogs[0])
   await blogObject.save()
-  blogObject = new Blog(initialBlogs[1])
+  blogObject = new Blog(helper.initialBlogs[1])
   await blogObject.save()
 })
 
@@ -40,7 +27,7 @@ test("blogs are returned as json", async () => {
 test("all blogs are returned", async () => {
   const response = await api.get("/api/blogs")
   // console.log(response.body.length)
-  assert.strictEqual(response.body.length, initialBlogs.length)
+  assert.strictEqual(response.body.length, helper.initialBlogs.length)
 })
 
 test("blog posts have id property, not _id", async () => {
@@ -81,7 +68,7 @@ test("a valid blog can be added", async () => {
 
   // fetch blogs after adding
   const blogsAtEnd = await Blog.find({})
-  assert.strictEqual(blogsAtEnd.length, initialBlogs.length + 1)
+  assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length + 1)
 
   const titles = blogsAtEnd.map((b) => b.title)
   assert.ok(
@@ -126,28 +113,60 @@ test("blog without title is not added", async () => {
   const newBlog = {
     author: "No Title Author",
     url: "https://example.com",
-    likes: 5
+    likes: 5,
   }
 
-  await api
-    .post("/api/blogs")
-    .send(newBlog)
-    .expect(400)
+  await api.post("/api/blogs").send(newBlog).expect(400)
+
+  const blogsAtEnd = await Blog.find({})
+  assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length)
 })
 
 test("blog without url is not added", async () => {
   const newBlog = {
     title: "No URL Blog",
     author: "Someone",
-    likes: 5
+    likes: 5,
   }
 
-  await api
-    .post("/api/blogs")
-    .send(newBlog)
-    .expect(400)
+  await api.post("/api/blogs").send(newBlog).expect(400)
+
+  const blogsAtEnd = await Blog.find({})
+  assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length)
 })
 
+// 4.13 Blog List Expansions, step 1
+
+// Implement functionality for deleting a single blog post resource.
+
+// Use the async/await syntax. Follow RESTful conventions when defining the HTTP API.
+
+// Implement tests for the functionality.
+
+describe("deletion of a blog", () => {
+  test("succeeds with status code 204 if id is valid", async () => {
+    const blogsAtStart = await helper.blogsInDb()
+    const blogToDelete = blogsAtStart[0]
+
+    await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204)
+
+    const blogsAtEnd = await helper.blogsInDb()
+
+    const titles = blogsAtEnd.map((b) => b.title)
+    assert(!titles.includes(blogToDelete.title))
+
+    assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length - 1)
+  })
+})
+// 4.14 Blog List Expansions, step 2
+
+// Implement functionality for updating the information of an individual blog post.
+
+// Use async/await.
+
+// The application mostly needs to update the number of likes for a blog post. You can implement this functionality the same way that we implemented updating notes in part 3.
+
+// Implement tests for the functionality.
 
 after(async () => {
   await mongoose.connection.close()
