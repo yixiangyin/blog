@@ -7,7 +7,7 @@ const Blog = require("../models/blog")
 const helper = require("./test_helper")
 const api = supertest(app)
 
-
+// TODO: structure the tests
 
 beforeEach(async () => {
   await Blog.deleteMany({})
@@ -167,6 +167,26 @@ describe("deletion of a blog", () => {
 // The application mostly needs to update the number of likes for a blog post. You can implement this functionality the same way that we implemented updating notes in part 3.
 
 // Implement tests for the functionality.
+
+test("updating likes succeeds and returns updated blog", async () => {
+  const blogsAtStart = await Blog.find({})
+  const blogToUpdate = blogsAtStart[0]
+
+  const newLikes = blogToUpdate.likes + 1
+
+  const response = await api
+    .put(`/api/blogs/${blogToUpdate.id}`)
+    .send({ likes: newLikes })
+    .expect(200)
+    .expect("Content-Type", /application\/json/)
+
+  // Check API response
+  assert.strictEqual(response.body.likes, newLikes)
+
+  // Check DB update
+  const updatedBlogInDb = await Blog.findById(blogToUpdate.id)
+  assert.strictEqual(updatedBlogInDb.likes, newLikes)
+})
 
 after(async () => {
   await mongoose.connection.close()
