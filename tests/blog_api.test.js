@@ -22,6 +22,8 @@ const initialBlogs = [
   },
 ]
 
+
+
 beforeEach(async () => {
   await Blog.deleteMany({})
   let blogObject = new Blog(initialBlogs[0])
@@ -56,6 +58,39 @@ test("blog posts have id property, not _id", async () => {
   })
 })
 
+// 4.10: Blog List Tests, step 3
+
+// Write a test that verifies that making an HTTP POST request to the /api/blogs URL successfully creates a new blog post.
+// At the very least, verify that the total number of blogs in the system is increased by one.
+// You can also verify that the content of the blog post is saved correctly to the database.
+
+// Once the test is finished, refactor the operation to use async/await instead of promises.
+
+test("a valid blog can be added", async () => {
+  const newBlog = {
+  title: "Love yourself",
+  author: "Justin Bieber",
+  url: "https://en.wikipedia.org/wiki/Love_Yourself",
+  likes: 999,
+}
+
+  // send POST request
+  await api
+    .post("/api/blogs")
+    .send(newBlog)
+    .expect(201)
+    .expect("Content-Type", /application\/json/)
+
+  // fetch blogs after adding
+  const blogsAtEnd = await Blog.find({})
+  assert.strictEqual(blogsAtEnd.length, initialBlogs.length + 1)
+
+  const titles = blogsAtEnd.map((b) => b.title)
+  assert.ok(
+    titles.includes("Love yourself"),
+    "Newly added blog title should be found in DB"
+  )
+})
 after(async () => {
   await mongoose.connection.close()
 })
