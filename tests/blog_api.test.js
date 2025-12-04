@@ -18,6 +18,26 @@ describe("when there is initially one user in db", () => {
 
     await user.save()
   })
+  test("creation fails with proper statuscode and message if username or password fits criteria", async () => {
+  // Both username and password must be given and both must be at least 3 characters long. The username must be unique.
+const usersAtStart = await helper.usersInDb()
+
+  const newUser = {
+    username: "i",
+    name: "o",
+    password: "u",
+  }
+    const result = await api
+      .post("/api/users")
+      .send(newUser)
+      .expect(400)
+      .expect("Content-Type", /application\/json/)
+    const usersAtEnd = await helper.usersInDb()
+    assert(result.body.error.includes("username must be at least 3 characters long"))
+
+    assert.strictEqual(usersAtEnd.length, usersAtStart.length)
+
+  }) 
   test("creation fails with proper statuscode and message if username already taken", async () => {
     const usersAtStart = await helper.usersInDb()
 
