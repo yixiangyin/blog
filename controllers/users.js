@@ -2,6 +2,11 @@ const bcrypt = require('bcrypt')
 const usersRouter = require('express').Router()
 const User = require('../models/user')
 
+// When using async/await syntax, 
+// Express will automatically call the error-handling middleware 
+// if an await statement throws an error or the awaited promise is rejected. 
+// This makes the final code even cleaner.
+// https://fullstackopen.com/en/part4/testing_the_backend#error-handling-and-asyncawait
 usersRouter.post('/', async (request, response) => {
   const { username, name, password } = request.body
 
@@ -22,7 +27,7 @@ usersRouter.post('/', async (request, response) => {
       error: "password must be at least 3 characters long"
     })
   }
-  
+
   const saltRounds = 10
   const passwordHash = await bcrypt.hash(password, saltRounds)
 
