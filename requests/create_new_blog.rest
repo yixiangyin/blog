@@ -1,9 +1,10 @@
 POST http://localhost:3003/api/blogs
 Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InJvb3QiLCJpZCI6IjY5MzM3MmMwMmM0ZDljYjQxYmQ4MjM0MyIsImlhdCI6MTc2NTA2Mzk3NH0.vmoFDiC7BdujE9R1nwsWAhBZXHaJnurUI8uzF5F4Jz0
 
 {
-  "title": "Blog 3",
-  "author": "Yixiang Yin",
+  "title": "Blog 5",
+  "author": "Yixiang",
   "url": "https://en.wikipedia.org/wiki/Love",
-  "likes": 8
+  "likes": 80
 }
