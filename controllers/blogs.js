@@ -3,14 +3,6 @@ const Blog = require("../models/blog")
 const User = require("../models/user")
 const jwt = require("jsonwebtoken")
 
-const getTokenFrom = (request) => {
-  const authorization = request.get("authorization")
-  if (authorization && authorization.startsWith("Bearer ")) {
-    return authorization.replace("Bearer ", "")
-  }
-  return null
-}
-
 blogsRouter.get("/", async (request, response) => {
   const blogs = await Blog.find({}).populate("user", { username: 1, name: 1 })
   response.json(blogs)
@@ -65,7 +57,42 @@ blogsRouter.put("/:id", async (request, response, next) => {
 })
 
 blogsRouter.delete("/:id", async (request, response) => {
+  const token = request.token
+  if (!token) {
+    return response.status(401).json({ error: "token missing" })
+  }
+  const decodedToken = jwt.verify(token, process.env.SECRET)
+  if (!decodedToken.id) {
+    return response.status(401).json({ error: "token invalid" })
+  }
+  const user = await User.findById(decodedToken.id)
+  if (!user) {
+    return response.status(400).json({ error: "UserId missing or not valid" })
+  }
+
+  const blog = await Blog.findById(request.params.id)
+  if (!blog) {
+    return response.status(404).json({ error: "blog not found" })
+  }
+
+  const blogOwnerId = blog.user.toString()
+  const currentUserId = decodedToken.id.toString()
+
+  if (blogOwnerId !== currentUserId) {
+    return response.status(403).json({
+      error: "only the creator can delete a blog",
+    })
+  }
+
+  if (blog.user.toString() === user.toString()) {
+  }
+
   await Blog.findByIdAndDelete(request.params.id)
+
+  // clean up the user fields
+  user.blogs = user.blogs.filter((b) => b.toString() !== blog._id.toString())
+  await user.save()
+
   response.status(204).end()
 })
 
