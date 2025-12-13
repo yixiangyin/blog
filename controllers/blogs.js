@@ -10,16 +10,15 @@ blogsRouter.get("/", async (request, response) => {
 blogsRouter.post("/", middleware.userExtractor, async (request, response) => {
   const user = request.user
   const blog = new Blog(request.body)
-
-  blog.likes = blog.likes | 0
+if (blog.likes === undefined) blog.likes = 0
   blog.user = user._id
   if (!blog.title || !blog.url) {
     return response.status(400).send({ error: "title or url missing" })
   }
+  const savedBlog = await blog.save()
+
   user.blogs = user.blogs.concat(blog._id)
   await user.save()
-
-  const savedBlog = await blog.save()
 
   response.status(201).json(savedBlog)
 })
@@ -61,13 +60,20 @@ blogsRouter.put("/:id", async (request, response) => {
   if (!blog) {
     return response.status(404).end()
   }
-  blog.title = title
-  blog.author = author
-  blog.url = url
-  blog.likes = likes
-
+  if (title !== undefined) {
+    blog.title = title
+  }
+  if (author !== undefined) {
+    blog.author = author
+  }
+  if (url !== undefined) {
+    blog.url = url
+  }
+  if (likes !== undefined) {
+    blog.likes = likes
+  }
   const savedBlog = await blog.save()
-  
+
   response.json(savedBlog)
 })
 
