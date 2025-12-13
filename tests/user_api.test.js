@@ -1,138 +1,95 @@
-const { after, beforeEach, describe, test } = require('node:test')
-const app = require('../app')
-const assert = require('node:assert')
-const mongoose = require('mongoose')
-const supertest = require('supertest')
-const helper = require('./test_helper')
-const User = require('../models/user')
+const { after, beforeEach, describe, test } = require("node:test")
+const app = require("../app")
+const assert = require("node:assert")
+const mongoose = require("mongoose")
+const supertest = require("supertest")
+const helper = require("./test_helper")
+const User = require("../models/user")
+const bcrypt = require('bcrypt')
 
 const api = supertest(app)
 
-describe('users', () => {
+describe("users", () => {
   beforeEach(async () => {
     await User.deleteMany({})
   })
 
-  test('a valid user can be added', async () => {
-    const newUser = {
-      username: 'newuser',
-      name: 'New User',
-      password: 'test123'
-    }
+  describe("when there is initially one user in db", () => {
+    beforeEach(async () => {
+      await User.deleteMany({})
 
-    const usersAtStart = await helper.usersInDb()
+      const passwordHash = await bcrypt.hash("sekret", 10)
+      const user = new User({ username: "root", passwordHash })
 
-    const response = await api
-      .post('/api/users')
-      .send(newUser)
-      .expect(201)
-      .expect('Content-Type', /application\/json/)
+      await user.save()
+    })
+    test("creation fails with proper statuscode and message if username or password fits criteria", async () => {
+      // Both username and password must be given and both must be at least 3 characters long. The username must be unique.
+      const usersAtStart = await helper.usersInDb()
 
-    assert.strictEqual(response.body.username, newUser.username)
-    assert.strictEqual(response.body.name, newUser.name)
+      const newUser = {
+        username: "i",
+        name: "o",
+        password: "u",
+      }
+      const result = await api
+        .post("/api/users")
+        .send(newUser)
+        .expect(400)
+        .expect("Content-Type", /application\/json/)
+      const usersAtEnd = await helper.usersInDb()
+      assert(
+        result.body.error.includes(
+          "username must be at least 3 characters long"
+        )
+      )
 
-    const usersAtEnd = await helper.usersInDb()
+      assert.strictEqual(usersAtEnd.length, usersAtStart.length)
+    })
+    test("creation fails with proper statuscode and message if username already taken", async () => {
+      const usersAtStart = await helper.usersInDb()
 
-    assert.strictEqual(usersAtStart.length, usersAtEnd.length - 1)
+      const newUser = {
+        username: "root",
+        name: "Superuser",
+        password: "salainen",
+      }
+
+      const result = await api
+        .post("/api/users")
+        .send(newUser)
+        .expect(400)
+        .expect("Content-Type", /application\/json/)
+
+      const usersAtEnd = await helper.usersInDb()
+
+      assert(result.body.error.includes("expected `username` to be unique"))
+
+      assert.strictEqual(usersAtEnd.length, usersAtStart.length)
+    })
+    test("creation succeeds with a fresh username", async () => {
+      const usersAtStart = await helper.usersInDb()
+
+      const newUser = {
+        username: "mluukkai",
+        name: "Matti Luukkainen",
+        password: "salainen",
+      }
+
+      await api
+        .post("/api/users")
+        .send(newUser)
+        .expect(201)
+        .expect("Content-Type", /application\/json/)
+
+      const usersAtEnd = await helper.usersInDb()
+      assert.strictEqual(usersAtEnd.length, usersAtStart.length + 1)
+
+      const usernames = usersAtEnd.map((u) => u.username)
+      assert(usernames.includes(newUser.username))
+    })
   })
-
-  test('user without username is not added', async () => {
-    const newUser = {
-      name: 'New User',
-      password: 'test123'
-    }
-
-    const usersAtStart = await helper.usersInDb()
-
-    await api
-      .post('/api/users')
-      .send(newUser)
-      .expect(400)
-      .expect('Content-Type', /application\/json/)
-
-    const usersAtEnd = await helper.usersInDb()
-
-    assert.strictEqual(usersAtStart.length, usersAtEnd.length)
-  })
-
-  test('user without password is not added', async () => {
-    const newUser = {
-      username: 'newuser',
-      name: 'New User'
-    }
-
-    const usersAtStart = await helper.usersInDb()
-
-    await api
-      .post('/api/users')
-      .send(newUser)
-      .expect(400)
-      .expect('Content-Type', /application\/json/)
-
-    const usersAtEnd = await helper.usersInDb()
-
-    assert.strictEqual(usersAtStart.length, usersAtEnd.length)
-  })
-
-  test('user is not added if password length is 2 characters', async () => {
-    const newUser = {
-      username: 'newuser',
-      name: 'New User',
-      password: 'pw'
-    }
-
-    const usersAtStart = await helper.usersInDb()
-
-    await api
-      .post('/api/users')
-      .send(newUser)
-      .expect(400)
-      .expect('Content-Type', /application\/json/)
-
-    const usersAtEnd = await helper.usersInDb()
-
-    assert.strictEqual(usersAtStart.length, usersAtEnd.length)
-  })
-
-  test('user is not added if username length is 2 characters', async () => {
-    const newUser = {
-      username: 'nu',
-      name: 'New User',
-      password: 'password'
-    }
-
-    const usersAtStart = await helper.usersInDb()
-
-    await api
-      .post('/api/users')
-      .send(newUser)
-      .expect(400)
-      .expect('Content-Type', /application\/json/)
-
-    const usersAtEnd = await helper.usersInDb()
-
-    assert.strictEqual(usersAtStart.length, usersAtEnd.length)
-  })
-
-  test("same username can't be added twice", async () => {
-    const newUser = {
-      username: 'newuser',
-      name: 'New User',
-      password: 'test123'
-    }
-
-    await api.post('/api/users').send(newUser)
-
-    const usersAtStart = await helper.usersInDb()
-
-    await api.post('/api/users').send(newUser).expect(400)
-
-    const usersAtEnd = await helper.usersInDb()
-
-    assert.strictEqual(usersAtStart.length, usersAtEnd.length)
-  })
-
-  after(() => {
+    after(() => {
     mongoose.connection.close()
   })
 })
