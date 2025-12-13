@@ -1,3 +1,4 @@
+// checked
 const assert = require("node:assert")
 const { test, after, beforeEach, before, describe } = require("node:test")
 const mongoose = require("mongoose")
@@ -55,6 +56,7 @@ describe("when there is initially one user in db", () => {
       .expect("Content-Type", /application\/json/)
 
     const usersAtEnd = await helper.usersInDb()
+    
     assert(result.body.error.includes("expected `username` to be unique"))
 
     assert.strictEqual(usersAtEnd.length, usersAtStart.length)
